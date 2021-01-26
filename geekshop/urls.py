@@ -1,19 +1,18 @@
-from django.urls import path, include
-from django.contrib import admin
+import mainapp.views as mainapp
 from django.conf import settings
+from django.conf.urls import include
 from django.conf.urls.static import static
-
-from mainapp import views as mainapp_views
+from django.urls import path
 
 urlpatterns = [
-
-    path('admin/', admin.site.urls),
-    path('', mainapp_views.main, name='main'),
+    path('', mainapp.main, name='main'),
     path('products/', include('mainapp.urls', namespace='products')),
+    path('contact/', mainapp.contact, name='contact'),
     path('auth/', include('authapp.urls', namespace='auth')),
-    path('baskets/', include('basketapp.urls', namespace='baskets')),
-    path('admin-staff/', include('adminapp.urls', namespace='admin_staff')),
-    path('', include('social_django.urls', namespace='social'))
+    path('basket/', include('basketapp.urls', namespace='basket')),
+    path('admin/', include('adminapp.urls', namespace='admin')),
+    path('', include('social_django.urls', namespace='social')),
+    path('order/', include('ordersapp.urls', namespace='order')),
 
 ]
 
