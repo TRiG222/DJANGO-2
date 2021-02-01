@@ -1,6 +1,9 @@
 import datetime
 from collections import OrderedDict
 from urllib.parse import urlencode, urlunparse
+import urllib.request
+
+from geekshop.settings import BASE_DIR
 
 import requests
 from django.utils import timezone
@@ -13,13 +16,12 @@ def save_user_profile(backend, user, response, *args, **kwargs):
     if backend.name != 'vk-oauth2':
         return
 
-    # api_url = f"https://api.vk.com/method/users.get/fields=bdate,about,sex&access_token={response['access_token']},  v = '5.92'"
 
     api_url = urlunparse(('https',
                           'api.vk.com',
                           '/method/users.get',
                           None,
-                          urlencode(OrderedDict(fields=','.join(('bdate', 'sex', 'about')),
+                          urlencode(OrderedDict(fields=','.join(('bdate', 'sex', 'about','photo_400_orig')),
                                                 access_token=response['access_token'],
                                                 v='5.92')),
                           None
@@ -45,7 +47,7 @@ def save_user_profile(backend, user, response, *args, **kwargs):
         bdate = datetime.datetime.strptime(data['bdate'], '%d.%m.%Y').date()
         age = timezone.now().date().year - bdate.year
 
-        if age < 100:
+        if age < 18:
             user.delete()
             raise AuthForbidden('social_core.backends.vk.VKOAuth2')
 

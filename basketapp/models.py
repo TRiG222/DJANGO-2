@@ -1,24 +1,51 @@
 from django.db import models
-from authapp.models import User
+from django.conf import settings
 from mainapp.models import Product
 
-
 class Basket(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=0)
-    created_timestamp = models.DateTimeField(auto_now_add=True)
+    quantity = models.PositiveIntegerField(verbose_name='количество', default=0)
+    add_datetime = models.DateTimeField(verbose_name='время добавления', auto_now_add=True)
+    
+    
+    def _get_product_cost(self):
+        "return cost of all products this type"
+        return self.product.price * self.quantity
+    
+    product_cost = property(_get_product_cost)
+    
+    
+    def _get_total_quantity(self):
+        "return total quantity for user"
+        _items = Basket.objects.filter(user=self.user)
+        _totalquantity = sum(list(map(lambda x: x.quantity, _items)))
+        return _totalquantity
+        
+    total_quantity = property(_get_total_quantity)
+    
+    
+    def _get_total_cost(self):
+        "return total cost for user"
+        _items = Basket.objects.filter(user=self.user)
+        _totalcost = sum(list(map(lambda x: x.product_cost, _items)))
+        return _totalcost
+        
+    total_cost = property(_get_total_cost)
 
-    def __str__(self):
-        return f'Корзина для {self.user.username} | Продукт {self.product.name}'
+    @staticmethod
+    def get_items(user):
+        return Basket.objects.filter(user=user).order_by('product__category')
 
-    def sum(self):
-        return self.quantity * self.product.price
+    @staticmethod
+    def get_products_quantity(cls, user):
+        basket_items = cls.get_items(user)
+        basket_items_dic = {}
+        [basket_items_dic.update({item.product: item.quantity}) for item in basket_items]
+        return basket_items_dic
 
-    def total_quantity(self):
-        baskets = Basket.objects.filter(user=self.user)
-        return sum(basket.quantity for basket in baskets)
+    def delete(self):
+        self.product.quantity += self.quantity
+        self.product.save()
+        super().delete()
 
-    def total_sum(self):
-        baskets = Basket.objects.filter(user=self.user)
-        return sum(basket.sum() for basket in baskets)
