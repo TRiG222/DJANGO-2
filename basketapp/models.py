@@ -32,3 +32,20 @@ class Basket(models.Model):
         return _totalcost
         
     total_cost = property(_get_total_cost)
+
+    @staticmethod
+    def get_items(user):
+        return Basket.objects.filter(user=user).order_by('product__category')
+
+    @staticmethod
+    def get_products_quantity(cls, user):
+        basket_items = cls.get_items(user)
+        basket_items_dic = {}
+        [basket_items_dic.update({item.product: item.quantity}) for item in basket_items]
+        return basket_items_dic
+
+    def delete(self):
+        self.product.quantity += self.quantity
+        self.product.save()
+        super().delete()
+
